@@ -23,9 +23,12 @@ export const getCellFromPointer = (
   store: ReactGridStore,
   clientX: number,
   clientY: number
-): { cell: undefined; rowIndex: -1; colIndex: -1 } | { rowIndex: number; colIndex: number } => {
+):
+  | { rowIndex: number; colIndex: number }
+  | { rowIndex: number; colIndex: number; secondCellRowIndex: number; secondCellColIndex: number } => {
   // Return if no expectations were met
-  const defaultReturn = { cell: undefined, rowIndex: -1, colIndex: -1 };
+  const defaultReturn = { rowIndex: -1, colIndex: -1 };
+
   // Get HTMLElement that contains rendered cell data
   const cellContainer = getContainerFromPoint(clientX, clientY);
 
@@ -37,6 +40,7 @@ export const getCellFromPointer = (
   if (!rowsAndColumns) return defaultReturn;
 
   const { rowIndex, colIndex } = rowsAndColumns;
+
   // Get information about cell based on its row and column
   const hoveredCell = store.getCellByIndexes(rowIndex, colIndex);
 
@@ -44,47 +48,17 @@ export const getCellFromPointer = (
 
   // If cell is sticky, TRY to find cellContainer under the sticky. If there is no such element, select the sticky.
   if (isCellSticky(store, hoveredCell)) {
-    const stickyCell = cellContainer;
-    const stickyPane = getCellPane(store, hoveredCell)!;
-    // Get the direction of sticky cell pane and scroll in that direction.
-    const direction = getStickyPaneDirection(stickyPane)!.toLowerCase();
-    const scrollableElement = getScrollableParent(store.reactGridRef!, true);
-
     const cellUnderTheSticky = getNonStickyCell(store, clientX, clientY);
 
-    const hoveredCellRowsAndColumns = getRowAndColumns(cellUnderTheSticky || stickyCell);
-    const { rowIndex: secondCellRowIndex, colIndex: secondCellColIndex } = hoveredCellRowsAndColumns || defaultReturn
-
-    const MIN_SCROLL_SPEED = 8;
-    const scrollSpeed = createMultiplierFromDistance(rowIndex, colIndex, secondCellColIndex, secondCellRowIndex)
-
-    const { x, y } = calcScrollBy(direction, MIN_SCROLL_SPEED > scrollSpeed ? MIN_SCROLL_SPEED : scrollSpeed);
-    // Scroll by x and y
-    scrollableElement?.scrollBy(x, y);
-
     // If there is no cell under sticky, try to select sticky cell.
-    if (!cellUnderTheSticky) {
-      if (!rowsAndColumns) return defaultReturn;
+    if (!cellUnderTheSticky) return { rowIndex, colIndex };
 
-      const { rowIndex, colIndex } = rowsAndColumns;
-      return { rowIndex, colIndex };
+    const hoveredCellRowsAndColumns = getRowAndColumns(cellUnderTheSticky || cellContainer)!;
+    if (hoveredCellRowsAndColumns) {
+      const { rowIndex: secondCellRowIndex, colIndex: secondCellColIndex } = hoveredCellRowsAndColumns;
+      return { rowIndex, colIndex, secondCellRowIndex, secondCellColIndex };
     }
-
-    const stickyCellRowsAndColumns = getRowAndColumns(cellUnderTheSticky);
-
-    if (!stickyCellRowsAndColumns) {
-
-      return defaultReturn;
-    } else {
-
-      
-      const { rowIndex, colIndex } = stickyCellRowsAndColumns;
-      return { rowIndex, colIndex };
-    }
-
-  } else {
-    return { rowIndex, colIndex };
-  }
+  } 
+  return { rowIndex, colIndex };
+  
 };
-
-
