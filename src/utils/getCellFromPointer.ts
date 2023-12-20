@@ -16,6 +16,9 @@ import { createMultiplierFromDistance } from "./createMultiplierFromDistance";
  * @returns {HTMLElement | { rowIndex: number; colIndex: number }} - Returns either an HTMLElement representing the cell container or an object containing rowIndex and colIndex.
  */
 
+
+// ! This function does more than it should.
+// TODO: Remove scrolling behaviour from this function
 export const getCellFromPointer = (
   store: ReactGridStore,
   clientX: number,
